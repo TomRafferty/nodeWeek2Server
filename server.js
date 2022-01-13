@@ -1,3 +1,4 @@
+const { response } = require("express");
 const express = require("express");
 const app = express();
 const port = 8000;
@@ -31,18 +32,34 @@ app.get("/albums", (req, res) => {
   res.send(albumsData);
 });
 
-app.get("/albums/:id", (req, res) => {
-  console.log(req.params.albumID);
-  console.log(typeof req.params.albumID);
-  res.send(albumsData.find((album) => album.albumId === req.params.id));
-});
-
 app.post("/albums", (req, res) => {
   const foundAlbum = albumsData.find(
     (album) => album.albumId === req.body.albumId
   );
   foundAlbum === undefined ? albumsData.push(req.body) : res.status(400);
   res.send();
+});
+
+app.get("/albums/:id", (req, res) => {
+  console.log(req.params.albumID);
+  console.log(typeof req.params.albumID);
+  res.send(albumsData.find((album) => album.albumId === req.params.id));
+});
+
+app.put("/albums/:id", function (req, res) {
+  //this is a modified version of Mark's code.
+  const index = albumsData.findIndex((album) => album.albumId == req.params.id);
+  if (index < 0)
+    res.status(404).json({ success: false, message: "album not found" });
+  const changes = req.body;
+  let allowedChanges = {};
+  ["collectionName", "artistName"].forEach((key) => {
+    if (changes.hasOwnProperty(key)) allowedChanges[key] = changes[key];
+  });
+  const oldAlbum = albumsData[index];
+  const newAlbum = { ...oldAlbum, ...allowedChanges };
+  albumsData[index] = newAlbum;
+  response.json({ success: true, oldAlbum: oldAlbum, updatedAlbum: newAlbum });
 });
 
 app.delete("/albums/:id", (req, res) => {
